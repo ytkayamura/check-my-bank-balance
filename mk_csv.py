@@ -53,15 +53,17 @@ def read_shinsei():
 		r_df = pd.DataFrame(shinseis[1:], columns=COLUMNS)
 		if len(r_df) != len(r_df.drop_duplicates(COLUMNS)):
 			print('WARNING:本スクリプトが想定しない同一ファイル内の同一値レコードが見つかりました.')
+		r_df['dt'] = r_df['dt_str'].apply(lambda s: datetime.strptime(s, '%Y/%m/%d'))
+		r_df['max_dt'] = max(r_df['dt'])
 		df = pd.concat([df, r_df])
 	df = df.drop_duplicates(COLUMNS)
-	df['dt'] = df['dt_str'].apply(lambda s: datetime.strptime(s, '%Y/%m/%d'))
 	df['bank'] = '新生'
 	# 数字を数値に
 	df['payment'] = df['payment'].apply(lambda s: 0 if s == '' else int(s))
 	df['deposit_amt'] = df['deposit_amt'].apply(lambda s: 0 if s == '' else int(s))
 	df['balance'] = df['balance'].apply(lambda s: 0 if s == '' else int(s))
-	df = df.sort_index(ascending=False).reset_index(drop=True)  # 新生は降順
+	df = df.reset_index()
+	df = df.sort_values(by=['max_dt', 'index'], ascending=[True, False]).reset_index(drop=True)  # 新生は降順
 	df = init_balance_sum(df)
 	df = sdt(df)
 	return df[COMMON_COLUMNS]
